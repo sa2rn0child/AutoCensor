@@ -1,0 +1,14 @@
+D:\ПИ-24 в\2 курс\2\динамика\AutoCensor\AutoCensor\bin\Debug\net10.0-windows\AutoCensor.exe
+D:\ПИ-24 в\2 курс\2\динамика\AutoCensor\AutoCensor\bin\Debug\net10.0-windows\AutoCensor.deps.json
+D:\ПИ-24 в\2 курс\2\динамика\AutoCensor\AutoCensor\bin\Debug\net10.0-windows\AutoCensor.runtimeconfig.json
+D:\ПИ-24 в\2 курс\2\динамика\AutoCensor\AutoCensor\bin\Debug\net10.0-windows\AutoCensor.dll
+D:\ПИ-24 в\2 курс\2\динамика\AutoCensor\AutoCensor\bin\Debug\net10.0-windows\AutoCensor.pdb
+D:\ПИ-24 в\2 курс\2\динамика\AutoCensor\AutoCensor\obj\Debug\net10.0-windows\AutoCensor.GeneratedMSBuildEditorConfig.editorconfig
+D:\ПИ-24 в\2 курс\2\динамика\AutoCensor\AutoCensor\obj\Debug\net10.0-windows\AutoCensor.AssemblyInfoInputs.cache
+D:\ПИ-24 в\2 курс\2\динамика\AutoCensor\AutoCensor\obj\Debug\net10.0-windows\AutoCensor.AssemblyInfo.cs
+D:\ПИ-24 в\2 курс\2\динамика\AutoCensor\AutoCensor\obj\Debug\net10.0-windows\AutoCensor.csproj.CoreCompileInputs.cache
+D:\ПИ-24 в\2 курс\2\динамика\AutoCensor\AutoCensor\obj\Debug\net10.0-windows\AutoCensor.dll
+D:\ПИ-24 в\2 курс\2\динамика\AutoCensor\AutoCensor\obj\Debug\net10.0-windows\refint\AutoCensor.dll
+D:\ПИ-24 в\2 курс\2\динамика\AutoCensor\AutoCensor\obj\Debug\net10.0-windows\AutoCensor.pdb
+D:\ПИ-24 в\2 курс\2\динамика\AutoCensor\AutoCensor\obj\Debug\net10.0-windows\AutoCensor.genruntimeconfig.cache
+D:\ПИ-24 в\2 курс\2\динамика\AutoCensor\AutoCensor\obj\Debug\net10.0-windows\ref\AutoCensor.dll
