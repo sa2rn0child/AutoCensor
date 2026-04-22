@@ -8,23 +8,23 @@
     "net10.0-windows7.0": []
   },
   "packageFolders": {
-    "C:\\Users\\user\\.nuget\\packages\\": {},
+    "C:\\Users\\Harry Potter\\.nuget\\packages\\": {},
     "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "D:\\ПИ-24 в\\2 курс\\2\\динамика\\AutoCensor\\AutoCensor\\AutoCensor.csproj",
+      "projectUniqueName": "C:\\Users\\Harry Potter\\AutoCensor\\AutoCensor\\AutoCensor.csproj",
       "projectName": "AutoCensor",
-      "projectPath": "D:\\ПИ-24 в\\2 курс\\2\\динамика\\AutoCensor\\AutoCensor\\AutoCensor.csproj",
-      "packagesPath": "C:\\Users\\user\\.nuget\\packages\\",
-      "outputPath": "D:\\ПИ-24 в\\2 курс\\2\\динамика\\AutoCensor\\AutoCensor\\obj\\",
+      "projectPath": "C:\\Users\\Harry Potter\\AutoCensor\\AutoCensor\\AutoCensor.csproj",
+      "packagesPath": "C:\\Users\\Harry Potter\\.nuget\\packages\\",
+      "outputPath": "C:\\Users\\Harry Potter\\AutoCensor\\AutoCensor\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
       ],
       "configFilePaths": [
-        "C:\\Users\\user\\AppData\\Roaming\\NuGet\\NuGet.Config",
+        "C:\\Users\\Harry Potter\\AppData\\Roaming\\NuGet\\NuGet.Config",
         "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
         "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
       ],
@@ -33,6 +33,7 @@
       ],
       "sources": {
         "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+        "C:\\Program Files\\dotnet\\library-packs": {},
         "https://api.nuget.org/v3/index.json": {}
       },
       "frameworks": {

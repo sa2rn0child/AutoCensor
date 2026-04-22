@@ -12,3 +12,20 @@ D:\ПИ-24 в\2 курс\2\динамика\AutoCensor\AutoCensor\obj\Debug\net1
 D:\ПИ-24 в\2 курс\2\динамика\AutoCensor\AutoCensor\obj\Debug\net10.0-windows\AutoCensor.pdb
 D:\ПИ-24 в\2 курс\2\динамика\AutoCensor\AutoCensor\obj\Debug\net10.0-windows\AutoCensor.genruntimeconfig.cache
 D:\ПИ-24 в\2 курс\2\динамика\AutoCensor\AutoCensor\obj\Debug\net10.0-windows\ref\AutoCensor.dll
+C:\Users\Harry Potter\AutoCensor\AutoCensor\bin\Debug\net10.0-windows\AutoCensor.exe
+C:\Users\Harry Potter\AutoCensor\AutoCensor\bin\Debug\net10.0-windows\AutoCensor.deps.json
+C:\Users\Harry Potter\AutoCensor\AutoCensor\bin\Debug\net10.0-windows\AutoCensor.runtimeconfig.json
+C:\Users\Harry Potter\AutoCensor\AutoCensor\bin\Debug\net10.0-windows\AutoCensor.dll
+C:\Users\Harry Potter\AutoCensor\AutoCensor\bin\Debug\net10.0-windows\AutoCensor.pdb
+C:\Users\Harry Potter\AutoCensor\AutoCensor\obj\Debug\net10.0-windows\AutoCensor.MainForm.resources
+C:\Users\Harry Potter\AutoCensor\AutoCensor\obj\Debug\net10.0-windows\AutoCensor.csproj.GenerateResource.cache
+C:\Users\Harry Potter\AutoCensor\AutoCensor\obj\Debug\net10.0-windows\AutoCensor.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\Harry Potter\AutoCensor\AutoCensor\obj\Debug\net10.0-windows\AutoCensor.AssemblyInfoInputs.cache
+C:\Users\Harry Potter\AutoCensor\AutoCensor\obj\Debug\net10.0-windows\AutoCensor.AssemblyInfo.cs
+C:\Users\Harry Potter\AutoCensor\AutoCensor\obj\Debug\net10.0-windows\AutoCensor.csproj.CoreCompileInputs.cache
+C:\Users\Harry Potter\AutoCensor\AutoCensor\obj\Debug\net10.0-windows\AutoCensor.sourcelink.json
+C:\Users\Harry Potter\AutoCensor\AutoCensor\obj\Debug\net10.0-windows\AutoCensor.dll
+C:\Users\Harry Potter\AutoCensor\AutoCensor\obj\Debug\net10.0-windows\refint\AutoCensor.dll
+C:\Users\Harry Potter\AutoCensor\AutoCensor\obj\Debug\net10.0-windows\AutoCensor.pdb
+C:\Users\Harry Potter\AutoCensor\AutoCensor\obj\Debug\net10.0-windows\AutoCensor.genruntimeconfig.cache
+C:\Users\Harry Potter\AutoCensor\AutoCensor\obj\Debug\net10.0-windows\ref\AutoCensor.dll

@@ -1,68 +1,59 @@
 ﻿using System;
 using System.Drawing;
 using System.Drawing.Drawing2D;
+using System.IO;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace AutoCensor
 {
-    // ╔══════════════════════════════════════════════════════════════════╗
-    // ║  AutoCensor — Главная форма                                      ║
-    // ║  Milestone 4: UI Design        (Apr-20)                          ║
-    // ║  Milestone 5: Core Implementation (Apr-27)                       ║
-    // ║  Milestone 6: File Handling    (May-4)                           ║
-    // ║  Milestone 8: Async & UX       (May-18)                          ║
-    // ║  Milestone 9: Output & Reporting (May-25)                        ║
-    // ╚══════════════════════════════════════════════════════════════════╝
     public partial class MainForm : Form
     {
-        // Milestone 4: UI Design — состояние темы
+        // ── Состояние ──────────────────────────────────────────────────
         private bool isDarkTheme = false;
+        private CancellationTokenSource? _cts;
+        private string? _loadedSourcePath;
+        private string? _lastSavedResultPath;
+        private string? _lastCensoredText;
+        private int _lastReplacedCount;
 
-        // ── Панели ────────────────────────────────────────────────────
-        private Panel pnlTop;
-        private Panel pnlMain;
-        private Panel pnlLeft;
-        private Panel pnlRight;
-        private Panel pnlBottom;
+        private static readonly Logger Log = Logger.Instance;
 
-        // ── Шапка ─────────────────────────────────────────────────────
-        private Label lblTitle;
-        private Label lblSubtitle;
+        // ══════════════════════════════════════════════════════════════
+        //  Панели, лейблы, контролы — объявлены здесь
+        // ══════════════════════════════════════════════════════════════
+        private Panel pnlTop, pnlMain, pnlLeft, pnlRight, pnlBottom;
+        private Label lblTitle, lblSubtitle;
         private Button btnTheme;
-
-        // ── Левая колонка ─────────────────────────────────────────────
         private Panel pnlDropZone;
-        private Label lblDropIcon;
-        private Label lblDropText;
+        private Label lblDropIcon, lblDropText;
         private Label lblFileLabel;
         private TextBox txtFilePath;
         private Button btnBrowseFile;
         private Label lblWordsLabel;
         private TextBox txtWordList;
-        private Button btnBrowseDict;
-        private Button btnClear;
-
-        // ── Правая колонка ────────────────────────────────────────────
+        private Button btnBrowseDict, btnClear;
         private Label lblResultLabel;
         private TextBox txtResult;
         private Button btnSaveResult;
-        private Label lblReplacedCount;  // Milestone 9: счётчик замен
-
-        // ── Нижняя панель ─────────────────────────────────────────────
-        private Button btnStart;
-        private Button btnStop;
+        private Label lblReplacedCount;
+        private Button btnStart, btnStop;
         private ProgressBar progressBar;
-        private Label lblStatus;
-        private Label lblError;      // US3: сообщение об ошибке файла
+        private Label lblStatus, lblError;
 
         public MainForm()
         {
+            Log.Info("MainForm: инициализация.");
             InitializeComponents();
             ApplyTheme();
+            Log.Info("MainForm: готов.");
         }
 
         // ══════════════════════════════════════════════════════════════
-        //  Milestone 4 + 5: UI Design + Core Implementation
+        //  InitializeComponents — вся вёрстка (без изменений кроме
+        //  подключения обработчиков TODO)
         // ══════════════════════════════════════════════════════════════
         private void InitializeComponents()
         {
@@ -76,13 +67,7 @@ namespace AutoCensor
             this.FormBorderStyle = FormBorderStyle.Sizable;
 
             // ── TOP BAR ───────────────────────────────────────────────
-            // Milestone 4: UI Design — шапка с заголовком и кнопкой темы
-            pnlTop = new Panel
-            {
-                Dock = DockStyle.Top,
-                Height = 86,
-                Padding = new Padding(24, 0, 24, 0)
-            };
+            pnlTop = new Panel { Dock = DockStyle.Top, Height = 86, Padding = new Padding(24, 0, 24, 0) };
 
             lblTitle = new Label
             {
@@ -115,22 +100,12 @@ namespace AutoCensor
             pnlTop.Controls.AddRange(new Control[] { lblTitle, lblSubtitle, btnTheme });
 
             // ── MAIN AREA ─────────────────────────────────────────────
-            pnlMain = new Panel
-            {
-                Dock = DockStyle.Fill,
-                Padding = new Padding(20, 16, 20, 8)
-            };
+            pnlMain = new Panel { Dock = DockStyle.Fill, Padding = new Padding(20, 16, 20, 8) };
 
             // ── LEFT COLUMN ───────────────────────────────────────────
-            // Milestone 5: Core Implementation — левая панель
-            pnlLeft = new Panel
-            {
-                Dock = DockStyle.Left,
-                Width = 400,
-                Padding = new Padding(0, 0, 16, 0)
-            };
+            pnlLeft = new Panel { Dock = DockStyle.Left, Width = 400, Padding = new Padding(0, 0, 16, 0) };
 
-            // Milestone 6: File Handling — drag-and-drop зона
+            // Drop-zone
             pnlDropZone = new Panel
             {
                 Height = 90,
@@ -139,7 +114,10 @@ namespace AutoCensor
                 Margin = new Padding(0, 0, 0, 12)
             };
             pnlDropZone.Paint += PnlDropZone_Paint;
-            pnlDropZone.Click += (s, e) => { /* TODO Milestone 6: BrowseFile */ };
+            pnlDropZone.Click += (s, e) => BtnBrowseFile_Click(s, e);
+            pnlDropZone.AllowDrop = true;
+            pnlDropZone.DragEnter += PnlDropZone_DragEnter;
+            pnlDropZone.DragDrop += PnlDropZone_DragDrop;
 
             lblDropIcon = new Label
             {
@@ -163,8 +141,8 @@ namespace AutoCensor
 
             pnlDropZone.Controls.AddRange(new Control[] { lblDropIcon, lblDropText });
 
-            // Milestone 6: поле пути + кнопка
-            var pnlFileLine = new Panel { Height = 62, Dock = DockStyle.Top };
+            // File line
+            var pnlFileLine = new Panel { Height = 76, Dock = DockStyle.Top };
 
             lblFileLabel = new Label
             {
@@ -183,12 +161,10 @@ namespace AutoCensor
                 TabStop = false
             };
 
-            btnBrowseFile = MakeIconButton("📂", new Point(318, 19), new Size(66, 30));
-            btnBrowseFile.Text = "📂  Обзор";
+            btnBrowseFile = MakeIconButton("📂  Обзор", new Point(318, 19), new Size(66, 30));
             btnBrowseFile.Font = new Font("Segoe UI", 8.5f);
-            // TODO Milestone 6: btnBrowseFile.Click += BtnBrowseFile_Click;
+            btnBrowseFile.Click += BtnBrowseFile_Click;
 
-            // US3: метка ошибки — появляется если файл повреждён/не найден
             lblError = new Label
             {
                 Text = "",
@@ -198,12 +174,11 @@ namespace AutoCensor
                 ForeColor = Color.FromArgb(220, 53, 69),
                 Visible = false
             };
-            // TODO Milestone 6: lblError.Text = "⚠ Файл не найден или повреждён"; lblError.Visible = true;
 
-            pnlFileLine.Height = 76;
-            pnlFileLine.Controls.AddRange(new Control[] { lblFileLabel, txtFilePath, btnBrowseFile, lblError });
+            pnlFileLine.Controls.AddRange(new Control[]
+                { lblFileLabel, txtFilePath, btnBrowseFile, lblError });
 
-            // Milestone 7: Censorship Engine — поле слов
+            // Words block
             var pnlWordsBlock = new Panel { Dock = DockStyle.Fill, Padding = new Padding(0, 8, 0, 0) };
 
             lblWordsLabel = new Label
@@ -219,13 +194,11 @@ namespace AutoCensor
                 Multiline = true,
                 ScrollBars = ScrollBars.Vertical,
                 Font = new Font("Segoe UI", 9.5f),
-                Anchor = AnchorStyles.Top | AnchorStyles.Left |
-                             AnchorStyles.Right | AnchorStyles.Bottom,
+                Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Bottom,
                 Location = new Point(0, 30),
                 Size = new Size(384, 130)
             };
 
-            // Milestone 6 + 8: кнопки действий под полем слов
             var pnlBtns = new Panel
             {
                 Height = 44,
@@ -234,10 +207,10 @@ namespace AutoCensor
             };
 
             btnBrowseDict = MakeOutlineButton("📖  Загрузить словарь", new Point(0, 4), new Size(188, 34));
-            // TODO Milestone 6: btnBrowseDict.Click += BtnBrowseDict_Click;
+            btnBrowseDict.Click += BtnBrowseDict_Click;
 
             btnClear = MakeOutlineButton("✕  Очистить", new Point(196, 4), new Size(120, 34));
-            // TODO Milestone 8: btnClear.Click += BtnClear_Click;
+            btnClear.Click += BtnClear_Click;
 
             pnlBtns.Controls.AddRange(new Control[] { btnBrowseDict, btnClear });
             pnlWordsBlock.Controls.AddRange(new Control[] { lblWordsLabel, txtWordList, pnlBtns });
@@ -247,12 +220,7 @@ namespace AutoCensor
             pnlLeft.Controls.Add(pnlDropZone);
 
             // ── RIGHT COLUMN ──────────────────────────────────────────
-            // Milestone 9: Output & Reporting
-            pnlRight = new Panel
-            {
-                Dock = DockStyle.Fill,
-                Padding = new Padding(16, 0, 0, 0)
-            };
+            pnlRight = new Panel { Dock = DockStyle.Fill, Padding = new Padding(16, 0, 0, 0) };
 
             lblResultLabel = new Label
             {
@@ -269,12 +237,10 @@ namespace AutoCensor
                 ScrollBars = ScrollBars.Both,
                 WordWrap = false,
                 Font = new Font("Consolas", 9.5f),
-                Anchor = AnchorStyles.Top | AnchorStyles.Bottom |
-                             AnchorStyles.Left | AnchorStyles.Right,
+                Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right,
                 Location = new Point(16, 20)
             };
 
-            // Milestone 9: сохранение в result.txt
             btnSaveResult = new Button
             {
                 Text = "💾  Сохранить результат",
@@ -282,12 +248,12 @@ namespace AutoCensor
                 FlatStyle = FlatStyle.Flat,
                 Anchor = AnchorStyles.Bottom | AnchorStyles.Left,
                 Font = new Font("Segoe UI", 9f),
-                Cursor = Cursors.Hand
+                Cursor = Cursors.Hand,
+                Enabled = false
             };
             btnSaveResult.FlatAppearance.BorderSize = 1;
-            // TODO Milestone 9: btnSaveResult.Click += BtnSaveResult_Click;
+            btnSaveResult.Click += BtnSaveResult_Click;
 
-            // Milestone 9: US4 — счётчик замен рядом с кнопкой сохранения
             lblReplacedCount = new Label
             {
                 Text = "Замен: —",
@@ -296,15 +262,14 @@ namespace AutoCensor
                 Anchor = AnchorStyles.Bottom | AnchorStyles.Left,
                 ForeColor = Color.FromArgb(99, 102, 241)
             };
-            // TODO Milestone 9: lblReplacedCount.Text = $"Замен: {count}";
 
-            pnlRight.Controls.AddRange(new Control[] { lblResultLabel, txtResult, btnSaveResult, lblReplacedCount });
+            pnlRight.Controls.AddRange(new Control[]
+                { lblResultLabel, txtResult, btnSaveResult, lblReplacedCount });
 
             pnlMain.Controls.Add(pnlRight);
             pnlMain.Controls.Add(pnlLeft);
 
             // ── BOTTOM BAR ────────────────────────────────────────────
-            // Milestone 8: Async & UX — панель запуска
             pnlBottom = new Panel
             {
                 Dock = DockStyle.Bottom,
@@ -312,7 +277,6 @@ namespace AutoCensor
                 Padding = new Padding(20, 0, 20, 0)
             };
 
-            // Milestone 7+8: запуск асинхронной обработки
             btnStart = new Button
             {
                 Text = "▶   Запустить цензуру",
@@ -323,9 +287,8 @@ namespace AutoCensor
                 Cursor = Cursors.Hand
             };
             btnStart.FlatAppearance.BorderSize = 0;
-            // TODO Milestone 7+8: btnStart.Click += BtnStart_Click;
+            btnStart.Click += BtnStart_Click;
 
-            // Milestone 8: отмена через CancellationToken
             btnStop = new Button
             {
                 Text = "⏹   Стоп",
@@ -337,9 +300,13 @@ namespace AutoCensor
                 Cursor = Cursors.Hand
             };
             btnStop.FlatAppearance.BorderSize = 1;
-            // TODO Milestone 8: btnStop.Click += (s, e) => _cts?.Cancel();
+            btnStop.Click += (s, e) =>
+            {
+                _cts?.Cancel();
+                Log.Info("Пользователь нажал «Стоп».");
+                SetStatus("Отменяется…");
+            };
 
-            // Milestone 8: прогресс-бар
             progressBar = new ProgressBar
             {
                 Size = new Size(300, 8),
@@ -347,10 +314,9 @@ namespace AutoCensor
                 Style = ProgressBarStyle.Continuous
             };
 
-            // Milestone 8: строка статуса
             lblStatus = new Label
             {
-                Text = "Готово. Замен: —",
+                Text = "Готово.",
                 AutoSize = true,
                 Location = new Point(676, 22),
                 Font = new Font("Segoe UI", 8.5f),
@@ -358,11 +324,9 @@ namespace AutoCensor
             };
 
             pnlBottom.Controls.AddRange(new Control[]
-            {
-                btnStart, btnStop, progressBar, lblStatus
-            });
+                { btnStart, btnStop, progressBar, lblStatus });
 
-            // ── ФИНАЛЬНАЯ СБОРКА ──────────────────────────────────────
+            // ── СБОРКА ────────────────────────────────────────────────
             this.Controls.Add(pnlMain);
             this.Controls.Add(pnlBottom);
             this.Controls.Add(pnlTop);
@@ -375,28 +339,238 @@ namespace AutoCensor
             ResumeLayout(false);
         }
 
-        // ── Позиционирование кнопки темы при ресайзе ──────────────────
-        private void RepositionTopRight()
+        // ══════════════════════════════════════════════════════════════
+        //  MILESTONE 6 — File Handling
+        // ══════════════════════════════════════════════════════════════
+        private async void BtnBrowseFile_Click(object? sender, EventArgs e)
         {
-            btnTheme.Location = new Point(pnlTop.Width - btnTheme.Width - 24, 25);
+            string? path = FileHandler.BrowseTextFile();
+            if (path != null)
+                await LoadSourceFileAsync(path);
         }
 
-        // ── Растягивание правой колонки ───────────────────────────────
+        private async void BtnBrowseDict_Click(object? sender, EventArgs e)
+        {
+            string? path = FileHandler.BrowseDictFile();
+            if (path == null) return;
+
+            string? content = await FileHandler.ReadFileAsync(path);
+            if (content == null)
+            {
+                ShowFileError("Не удалось загрузить словарь.");
+                return;
+            }
+
+            // Добавляем к существующим словам
+            string existing = txtWordList.Text.Trim();
+            txtWordList.Text = existing.Length > 0
+                ? existing + Environment.NewLine + content
+                : content;
+
+            Log.Info($"Словарь загружен: {path}");
+        }
+
+        private void BtnClear_Click(object? sender, EventArgs e)
+        {
+            txtWordList.Clear();
+            Log.Info("Список слов очищен.");
+        }
+
+        // ── Drag & Drop ───────────────────────────────────────────────
+        private void PnlDropZone_DragEnter(object? sender, DragEventArgs e)
+        {
+            e.Effect = e.Data!.GetDataPresent(DataFormats.FileDrop)
+                ? DragDropEffects.Copy
+                : DragDropEffects.None;
+        }
+
+        private async void PnlDropZone_DragDrop(object? sender, DragEventArgs e)
+        {
+            if (FileHandler.ValidateDrop(e, out string? path) && path != null)
+                await LoadSourceFileAsync(path);
+            else
+                ShowFileError("Поддерживаются только .txt файлы.");
+        }
+
+        // ── Загрузка исходного файла ──────────────────────────────────
+        private async Task LoadSourceFileAsync(string path)
+        {
+            HideFileError();
+            txtFilePath.Text = path;
+            _loadedSourcePath = path;
+
+            string? content = await FileHandler.ReadFileAsync(path);
+            if (content == null)
+            {
+                ShowFileError("⚠ Файл не найден или повреждён.");
+                _loadedSourcePath = null;
+                txtFilePath.Text = "";
+            }
+        }
+
+        // ── Сохранение результата ─────────────────────────────────────
+        private async void BtnSaveResult_Click(object? sender, EventArgs e)
+        {
+            if (string.IsNullOrEmpty(_lastCensoredText)) return;
+
+            string? dir = _loadedSourcePath != null
+                ? Path.GetDirectoryName(_loadedSourcePath)
+                : null;
+
+            bool saved = await FileHandler.SaveResultAsync(_lastCensoredText, dir);
+
+            if (saved)
+            {
+                // Генерируем отчёт после сохранения
+                var report = ReportGenerator.Build(
+                    sourceFile: _loadedSourcePath ?? "—",
+                    outputFile: "result.txt",
+                    totalCharsIn: _loadedSourcePath != null
+                                       ? (await FileHandler.ReadFileAsync(_loadedSourcePath))?.Length ?? 0
+                                       : 0,
+                    totalCharsOut: _lastCensoredText.Length,
+                    replacedCount: _lastReplacedCount,
+                    elapsed: TimeSpan.Zero,
+                    wordStats: new System.Collections.Generic.List<(string, int)>());
+
+                SetStatus($"Сохранено. Замен: {_lastReplacedCount}");
+            }
+        }
+
+        // ══════════════════════════════════════════════════════════════
+        //  MILESTONE 7+8 — Async censorship
+        // ══════════════════════════════════════════════════════════════
+        private async void BtnStart_Click(object? sender, EventArgs e)
+        {
+            // Валидация
+            if (string.IsNullOrWhiteSpace(_loadedSourcePath))
+            {
+                ShowFileError("⚠ Выберите файл для цензуры.");
+                Log.Warning("Запуск отменён: файл не выбран.");
+                return;
+            }
+
+            string? sourceText = await FileHandler.ReadFileAsync(_loadedSourcePath);
+            if (sourceText == null)
+            {
+                ShowFileError("⚠ Не удалось прочитать файл.");
+                return;
+            }
+
+            var words = CensorEngine.ParseWordList(txtWordList.Text);
+            if (!words.Any())
+            {
+                MessageBox.Show(
+                    "Список слов для цензуры пуст.\nДобавьте слова или загрузите словарь.",
+                    "AutoCensor", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                Log.Warning("Запуск отменён: список слов пуст.");
+                return;
+            }
+
+            // ── Настройка UI на время обработки ──────────────────────
+            SetProcessingState(true);
+            txtResult.Clear();
+            progressBar.Value = 0;
+            SetStatus("Обработка…");
+            HideFileError();
+
+            _cts = new CancellationTokenSource();
+
+            var progress = new Progress<int>(pct =>
+            {
+                progressBar.Value = pct;
+                SetStatus($"Обработка… {pct}%");
+            });
+
+            try
+            {
+                var engine = new CensorEngine();
+                var result = await engine.ProcessAsync(
+                    sourceText,
+                    words,
+                    progress,
+                    _cts.Token);
+
+                _lastCensoredText = result.CensoredText;
+                _lastReplacedCount = result.ReplacedCount;
+
+                txtResult.Text = result.CensoredText;
+                lblReplacedCount.Text = $"Замен: {result.ReplacedCount}";
+                progressBar.Value = 100;
+                btnSaveResult.Enabled = true;
+
+                SetStatus($"Готово. Замен: {result.ReplacedCount}  ({result.Elapsed.TotalSeconds:F2}s)");
+                Log.Success($"UI обновлён. Замен: {result.ReplacedCount}.");
+            }
+            catch (OperationCanceledException)
+            {
+                SetStatus("Отменено пользователем.");
+                Log.Warning("Операция отменена через CancellationToken.");
+            }
+            catch (Exception ex)
+            {
+                SetStatus("Ошибка обработки.");
+                Log.Error("Необработанная ошибка во время цензуры.", ex);
+                MessageBox.Show($"Ошибка: {ex.Message}", "AutoCensor",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+            finally
+            {
+                SetProcessingState(false);
+                _cts.Dispose();
+                _cts = null;
+            }
+        }
+
+        // ── Переключение UI между «в процессе» / «готово» ────────────
+        private void SetProcessingState(bool processing)
+        {
+            btnStart.Enabled = !processing;
+            btnStop.Enabled = processing;
+            btnBrowseFile.Enabled = !processing;
+            btnBrowseDict.Enabled = !processing;
+        }
+
+        // ══════════════════════════════════════════════════════════════
+        //  Вспомогательные методы
+        // ══════════════════════════════════════════════════════════════
+        private void SetStatus(string text)
+        {
+            if (lblStatus.InvokeRequired)
+                lblStatus.Invoke(() => lblStatus.Text = text);
+            else
+                lblStatus.Text = text;
+        }
+
+        private void ShowFileError(string message)
+        {
+            lblError.Text = message;
+            lblError.Visible = true;
+        }
+
+        private void HideFileError()
+        {
+            lblError.Text = "";
+            lblError.Visible = false;
+        }
+
+        // ══════════════════════════════════════════════════════════════
+        //  Layout helpers (без изменений)
+        // ══════════════════════════════════════════════════════════════
+        private void RepositionTopRight()
+            => btnTheme.Location = new Point(pnlTop.Width - btnTheme.Width - 24, 25);
+
         private void LayoutRightPanel()
         {
             if (pnlRight == null || txtResult == null || btnSaveResult == null) return;
-
             int w = pnlRight.ClientSize.Width - 32;
             int h = pnlRight.ClientSize.Height - 72;
             txtResult.Size = new Size(w, h);
             btnSaveResult.Location = new Point(16, h + 28);
-
-            // US4: счётчик замен — правее кнопки сохранения
             if (lblReplacedCount != null)
                 lblReplacedCount.Location = new Point(226, h + 37);
         }
 
-        // ── Вспомогательные фабрики кнопок ────────────────────────────
         private Button MakeIconButton(string text, Point loc, Size size)
         {
             var b = new Button
@@ -428,7 +602,7 @@ namespace AutoCensor
         }
 
         // ══════════════════════════════════════════════════════════════
-        //  Milestone 4: UI Design — переключение тем
+        //  Milestone 4: Темы (без изменений)
         // ══════════════════════════════════════════════════════════════
         private void BtnTheme_Click(object? sender, EventArgs e)
         {
@@ -439,12 +613,10 @@ namespace AutoCensor
 
         private void ApplyTheme()
         {
-            Color bg, surface, surfaceHigh, fg, fgMuted, accent, accentFg,
-                  border, inputBg, inputFg;
+            Color bg, surface, surfaceHigh, fg, fgMuted, accent, accentFg, border, inputBg, inputFg;
 
             if (isDarkTheme)
             {
-                // Milestone 4: тёмная тема
                 bg = Color.FromArgb(15, 15, 20);
                 surface = Color.FromArgb(24, 24, 32);
                 surfaceHigh = Color.FromArgb(34, 34, 46);
@@ -458,7 +630,6 @@ namespace AutoCensor
             }
             else
             {
-                // Milestone 4: светлая тема
                 bg = Color.FromArgb(244, 244, 250);
                 surface = Color.White;
                 surfaceHigh = Color.FromArgb(248, 247, 255);
@@ -471,7 +642,6 @@ namespace AutoCensor
                 inputFg = Color.FromArgb(25, 25, 45);
             }
 
-            // Фоны
             this.BackColor = bg;
             pnlTop.BackColor = surface;
             pnlMain.BackColor = bg;
@@ -483,13 +653,11 @@ namespace AutoCensor
                 : Color.FromArgb(248, 246, 255);
             pnlDropZone.Invalidate();
 
-            // Заголовок
             lblTitle.ForeColor = accent;
             lblTitle.BackColor = surface;
             lblSubtitle.ForeColor = fgMuted;
             lblSubtitle.BackColor = surface;
 
-            // Лейблы
             foreach (var l in new[] { lblFileLabel, lblWordsLabel, lblResultLabel })
             { l.ForeColor = fgMuted; l.BackColor = Color.Transparent; }
 
@@ -500,65 +668,43 @@ namespace AutoCensor
             lblStatus.ForeColor = fgMuted;
             lblStatus.BackColor = Color.Transparent;
 
-            // Поля ввода
             foreach (var tb in new[] { txtFilePath, txtWordList, txtResult })
-            {
-                tb.BackColor = inputBg;
-                tb.ForeColor = inputFg;
-                tb.BorderStyle = BorderStyle.FixedSingle;
-            }
+            { tb.BackColor = inputBg; tb.ForeColor = inputFg; tb.BorderStyle = BorderStyle.FixedSingle; }
 
-            // Кнопка запуска — заливка акцентом
             btnStart.BackColor = accent;
             btnStart.ForeColor = accentFg;
             btnStart.FlatAppearance.BorderColor = accent;
             btnStart.FlatAppearance.MouseOverBackColor =
-                Color.FromArgb(Math.Min(accent.R + 20, 255),
-                               Math.Min(accent.G + 18, 255),
-                               Math.Min(accent.B + 30, 255));
+                Color.FromArgb(Math.Min(accent.R + 20, 255), Math.Min(accent.G + 18, 255), Math.Min(accent.B + 30, 255));
 
-            // Остальные кнопки — outline
-            foreach (var b in new[] { btnBrowseFile, btnBrowseDict, btnClear,
-                                       btnStop, btnSaveResult })
+            foreach (var b in new[] { btnBrowseFile, btnBrowseDict, btnClear, btnStop, btnSaveResult })
             {
                 b.BackColor = surfaceHigh;
                 b.ForeColor = fg;
                 b.FlatAppearance.BorderColor = border;
                 b.FlatAppearance.MouseOverBackColor =
-                    isDarkTheme ? Color.FromArgb(44, 44, 60)
-                                : Color.FromArgb(238, 236, 255);
+                    isDarkTheme ? Color.FromArgb(44, 44, 60) : Color.FromArgb(238, 236, 255);
             }
 
-            // Кнопка темы — акцентный бордер
             btnTheme.BackColor = surface;
             btnTheme.ForeColor = accent;
             btnTheme.FlatAppearance.BorderColor = accent;
             btnTheme.FlatAppearance.MouseOverBackColor =
-                isDarkTheme ? Color.FromArgb(30, 28, 50)
-                            : Color.FromArgb(242, 240, 255);
+                isDarkTheme ? Color.FromArgb(30, 28, 50) : Color.FromArgb(242, 240, 255);
 
             progressBar.BackColor = isDarkTheme
                 ? Color.FromArgb(40, 40, 56)
                 : Color.FromArgb(220, 218, 240);
 
-            // US3: цвет ошибки одинаков в обеих темах — красный
-            if (lblError != null)
-                lblError.ForeColor = Color.FromArgb(220, 53, 69);
-
-            // US4: счётчик замен — акцентный цвет темы
-            if (lblReplacedCount != null)
-                lblReplacedCount.ForeColor = accent;
+            if (lblError != null) lblError.ForeColor = Color.FromArgb(220, 53, 69);
+            if (lblReplacedCount != null) lblReplacedCount.ForeColor = accent;
         }
 
-        // ══════════════════════════════════════════════════════════════
-        //  Milestone 6: File Handling
-        //  Кастомная отрисовка drop-зоны со скруглёнными углами
-        // ══════════════════════════════════════════════════════════════
+        // ── Drop-zone paint ───────────────────────────────────────────
         private void PnlDropZone_Paint(object? sender, PaintEventArgs e)
         {
             var g = e.Graphics;
             g.SmoothingMode = SmoothingMode.AntiAlias;
-
             var r = new Rectangle(2, 2, pnlDropZone.Width - 5, pnlDropZone.Height - 5);
             int rad = 12;
 
