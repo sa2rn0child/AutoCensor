@@ -252,7 +252,8 @@ namespace AutoCensor
                 Cursor = Cursors.Hand,
                 Enabled = false
             };
-            
+            btnSaveResult.Click += BtnSaveResult_Click;
+
 
             lblReplacedCount = new Label
             {
@@ -348,6 +349,11 @@ namespace AutoCensor
             pnlMain.Resize += (s, e) => LayoutRightPanel();
 
             ResumeLayout(false);
+        }
+
+        private void BtnSaveResult_Click1(object? sender, EventArgs e)
+        {
+            throw new NotImplementedException();
         }
 
         // ══════════════════════════════════════════════════════════════

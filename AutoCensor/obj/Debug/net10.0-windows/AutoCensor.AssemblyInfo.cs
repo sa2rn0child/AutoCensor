@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("AutoCensor")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+bebd6a94a885812b0370a7b3c4fea3f03079fbc1")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+e312fc08548e06c4f833eeab24ec9120cf0335e7")]
 [assembly: System.Reflection.AssemblyProductAttribute("AutoCensor")]
 [assembly: System.Reflection.AssemblyTitleAttribute("AutoCensor")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
