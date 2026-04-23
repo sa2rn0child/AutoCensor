@@ -27,6 +27,7 @@ namespace AutoCensor
         private Panel pnlTop, pnlMain, pnlLeft, pnlRight, pnlBottom;
         private Label lblTitle, lblSubtitle;
         private Button btnTheme;
+        private Button btnClean;
         private Panel pnlDropZone;
         private Label lblDropIcon, lblDropText;
         private Label lblFileLabel;
@@ -251,8 +252,7 @@ namespace AutoCensor
                 Cursor = Cursors.Hand,
                 Enabled = false
             };
-            btnSaveResult.FlatAppearance.BorderSize = 1;
-            btnSaveResult.Click += BtnSaveResult_Click;
+            
 
             lblReplacedCount = new Label
             {
@@ -276,13 +276,24 @@ namespace AutoCensor
                 Height = 64,
                 Padding = new Padding(20, 0, 20, 0)
             };
+            btnClean = new Button
+            {
+                Text = "Очистить",
+                Size = new Size(110, 42),
+                FlatStyle = FlatStyle.Flat,
+                Location = new Point(20, 11),
+                Font = new Font("Segoe UI Semibold", 10f, FontStyle.Bold),
+                Cursor = Cursors.Hand
+            };
+            btnSaveResult.FlatAppearance.BorderSize = 1;
+            btnClean.Click += BtnClean_Click;
 
             btnStart = new Button
             {
                 Text = "▶   Запустить цензуру",
                 Size = new Size(200, 42),
                 FlatStyle = FlatStyle.Flat,
-                Location = new Point(20, 11),
+                Location = new Point(140, 11),
                 Font = new Font("Segoe UI Semibold", 10f, FontStyle.Bold),
                 Cursor = Cursors.Hand
             };
@@ -294,7 +305,7 @@ namespace AutoCensor
                 Text = "⏹   Стоп",
                 Size = new Size(110, 42),
                 FlatStyle = FlatStyle.Flat,
-                Location = new Point(230, 11),
+                Location = new Point(350, 11),
                 Font = new Font("Segoe UI", 9.5f),
                 Enabled = false,
                 Cursor = Cursors.Hand
@@ -310,7 +321,7 @@ namespace AutoCensor
             progressBar = new ProgressBar
             {
                 Size = new Size(300, 8),
-                Location = new Point(360, 28),
+                Location = new Point(470, 28),
                 Style = ProgressBarStyle.Continuous
             };
 
@@ -318,13 +329,13 @@ namespace AutoCensor
             {
                 Text = "Готово.",
                 AutoSize = true,
-                Location = new Point(676, 22),
+                Location = new Point(780, 22),
                 Font = new Font("Segoe UI", 8.5f),
                 ForeColor = Color.Gray
             };
 
             pnlBottom.Controls.AddRange(new Control[]
-                { btnStart, btnStop, progressBar, lblStatus });
+                { btnStart, btnStop, progressBar, lblStatus, btnClean });
 
             // ── СБОРКА ────────────────────────────────────────────────
             this.Controls.Add(pnlMain);
@@ -374,6 +385,13 @@ namespace AutoCensor
         {
             txtWordList.Clear();
             Log.Info("Список слов очищен.");
+        }
+
+        private void BtnClean_Click(object? sender, EventArgs e)
+        {
+            txtFilePath.Clear();
+            txtWordList.Clear();
+            txtResult.Clear();
         }
 
         // ── Drag & Drop ───────────────────────────────────────────────
@@ -527,6 +545,7 @@ namespace AutoCensor
         {
             btnStart.Enabled = !processing;
             btnStop.Enabled = processing;
+            btnClean.Enabled = !processing;
             btnBrowseFile.Enabled = !processing;
             btnBrowseDict.Enabled = !processing;
         }
@@ -677,7 +696,7 @@ namespace AutoCensor
             btnStart.FlatAppearance.MouseOverBackColor =
                 Color.FromArgb(Math.Min(accent.R + 20, 255), Math.Min(accent.G + 18, 255), Math.Min(accent.B + 30, 255));
 
-            foreach (var b in new[] { btnBrowseFile, btnBrowseDict, btnClear, btnStop, btnSaveResult })
+            foreach (var b in new[] { btnBrowseFile, btnBrowseDict, btnClear, btnStop, btnClean, btnSaveResult })
             {
                 b.BackColor = surfaceHigh;
                 b.ForeColor = fg;
